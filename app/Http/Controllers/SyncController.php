@@ -31,8 +31,33 @@ class SyncController extends Controller
             $reposnse .= "You are not connected to remote database <br>";
         }
         echo $reposnse;
+        $this->Sync('mysql', 'mysql_2');
+    } //end of index function
+    /**
+     * basic clean array to fit raw query     *
+     * @param  array  $columns
+     * @param  boolean  $is_column
+     *
+     * @return array
+     * @throws PublicException
+     * @author Ali Basha
+     */
+    private function ResolveArrayToFitQuery($columns, $is_column)
+    {
+        $column = json_encode($columns, true);
+        $column = str_replace('[', '(', $column);
+        $column = str_replace(']', ')', $column);
+        if ($is_column) {
+            $column = str_replace('"', '`', $column);
+            return $column;
+        }
+        return $column;
+    }
+
+    private function Sync($local_db_connection, $remote_db_connection)
+    {
         //get all unsynced rows from audits table 
-        $operations = DB::connection('mysql')->select(DB::raw("select * from audits where `synced` = 0;"));
+        $operations = DB::connection($local_db_connection)->select(DB::raw("select * from audits where `synced` = 0;"));
         $array_of_operations = (array)$operations;
         //looping through all unsynced rows
         foreach ($array_of_operations as $operate) {
@@ -59,7 +84,7 @@ class SyncController extends Controller
                 //collect raw query as string.
                 $insert_new_record_query = 'INSERT INTO `' . $operate->auditable_table . '` ' . $clean_columns . ' VALUES ' . $clean_values;
                 // run query of inserting new record on remote db
-                DB::connection('mysql_2')->select(DB::raw($insert_new_record_query));
+                DB::connection($remote_db_connection)->select(DB::raw($insert_new_record_query));
                 /** now we must insert the record of local audits table with 'synced'==1  */
                 //reset columns,values
                 $columns = [];
@@ -82,38 +107,19 @@ class SyncController extends Controller
                 //clean values and columns
                 $value = $this->ResolveArrayToFitQuery($values, false);
                 $column = $this->ResolveArrayToFitQuery($columns, true);
-                // print($value);
+                //collect raw query as string to insert current audits row
                 $insert_current_audits_row_query = 'INSERT INTO `audits` ' . $column . ' VALUES ' . $value;
-                //echo  $query;
-                DB::connection('mysql_2')->select(DB::raw($insert_current_audits_row_query));
-                DB::connection('mysql')->select(DB::raw('UPDATE `audits` SET `synced` = 1 WHERE `audits`.`id` =' . $operate->id));
+                //run query of inserting audits record on remote db
+                DB::connection($remote_db_connection)->select(DB::raw($insert_current_audits_row_query));
+                //run query of inserting audits record on remote db
+                DB::connection($local_db_connection)->select(DB::raw('UPDATE `audits` SET `synced` = 1 WHERE `audits`.`id` =' . $operate->id));
             } //end if(create)
             elseif ($operate->event == 'updated') {
                 //coming soon
-            } //end of if updated
+            } //end of if update
             elseif ($operate->event == 'deleted') {
                 //coming soon
-            } //end of if deleted
+            } //end of if delete
         } //end of main foreach
-    } //end of index function
-    /**
-     * basic clean array to fit raw query     *
-     * @param  array  $columns
-     * @param  boolean  $is_column
-     *
-     * @return array
-     * @throws PublicException
-     * @author Ali Basha
-     */
-    private function ResolveArrayToFitQuery($columns, $is_column)
-    {
-        $column = json_encode($columns, true);
-        $column = str_replace('[', '(', $column);
-        $column = str_replace(']', ')', $column);
-        if ($is_column) {
-            $column = str_replace('"', '`', $column);
-            return $column;
-        }
-        return $column;
-    }
+    } //end of Sync function
 }
