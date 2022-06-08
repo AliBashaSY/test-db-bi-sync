@@ -31,7 +31,10 @@ class SyncController extends Controller
             $reposnse .= "You are not connected to remote database <br>";
         }
         echo $reposnse;
+        //run sync source to destination
         $this->Sync('mysql', 'mysql_2');
+        //reverse the process to get the changes from remote to local
+        $this->Sync('mysql_2', 'mysql');
     } //end of index function
     /**
      * basic clean array to fit raw query     *
