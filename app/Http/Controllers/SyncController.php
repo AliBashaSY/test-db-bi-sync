@@ -137,7 +137,7 @@ class SyncController extends Controller
                     array_push($audit_values, 1);
                 }
             } //end of  operate_as_array foreach
-            //clean values and columns
+            //clean audit values and columns
             $audit_values = $this->ResolveArrayToFitQuery($audit_values, false);
             $audit_columns = $this->ResolveArrayToFitQuery($audit_columns, true);
             //collect raw query as string to insert current audits row
