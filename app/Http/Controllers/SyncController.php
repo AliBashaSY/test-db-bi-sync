@@ -104,7 +104,6 @@ class SyncController extends Controller
             $clean_columns = $this->ResolveArrayToFitQuery($columns, true);
             //check if the event is insert 
             if ($operate->event == 'created') {
-
                 //collect raw query as string.
                 $insert_new_record_query = 'INSERT INTO `' . $operate->auditable_table . '` ' . $clean_columns . ' VALUES ' . $clean_new_values;
                 // run query of inserting new record on remote db
@@ -120,26 +119,29 @@ class SyncController extends Controller
             elseif ($operate->event == 'deleted') {
                 //coming soon
             } //end of if delete
+            //init audit colums and values
+            $audit_columns = [];
+            $audit_values = [];
             //parse $oprate (which is the row of audits table that we are working on) as array
             $operate_as_array =  (array)$operate;
             //looping throught $operate_as_array 
             foreach ($operate_as_array as $key => $value) {
                 //check that key not id and not synced --here we ignore id to avoid conflicts while inserting into db from multiple locations
                 if ($key != 'id' and $key != 'synced') {
-                    array_push($columns, $key);
-                    array_push($values, $value);
+                    array_push($audit_columns, $key);
+                    array_push($audit_values, $value);
                 }
                 //check if key is synced set value to 1 (to store it on remote db as synced) 
                 if ($key == 'synced') {
-                    array_push($columns, $key);
-                    array_push($values, 1);
+                    array_push($audit_columns, $key);
+                    array_push($audit_values, 1);
                 }
             } //end of  operate_as_array foreach
             //clean values and columns
-            $value = $this->ResolveArrayToFitQuery($values, false);
-            $column = $this->ResolveArrayToFitQuery($columns, true);
+            $audit_values = $this->ResolveArrayToFitQuery($audit_values, false);
+            $audit_columns = $this->ResolveArrayToFitQuery($audit_columns, true);
             //collect raw query as string to insert current audits row
-            $insert_current_audits_row_query = 'INSERT INTO `audits` ' . $column . ' VALUES ' . $value;
+            $insert_current_audits_row_query = 'INSERT INTO `audits` ' . $audit_columns . ' VALUES ' . $audit_values;
             //run query of inserting audits record on remote db
             DB::connection($remote_db_connection)->select(DB::raw($insert_current_audits_row_query));
             //run query of inserting audits record on remote db
