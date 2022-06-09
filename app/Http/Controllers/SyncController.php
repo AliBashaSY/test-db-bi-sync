@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use OwenIt\Auditing\Models\Audit;
+use PDOException;
 
 class SyncController extends Controller
 {
@@ -16,25 +17,42 @@ class SyncController extends Controller
     public function index()
     {
         $reposnse = '';
+        $can_sync = true;
         //check db connection for local db
-        $pdo = DB::connection()->getPdo();
-        if ($pdo) {
+
+        // if ($pdo) {
+        //     $reposnse .= "Connected successfully to local database " . DB::connection()->getDatabaseName() . '<br>';
+        // } else {
+        //     $can_sync = false;
+        //     $reposnse .= "You are not connected to local database <br>";
+        // }
+        try {
             $reposnse .= "Connected successfully to local database " . DB::connection()->getDatabaseName() . '<br>';
-        } else {
-            $reposnse .= "You are not connected to local database <br>";
+            DB::connection()->getPdo();
+        } catch (\PDOException $e) {
+            $reposnse .= $e->getMessage();
         }
         //check db connection for remote db
-        $pdo = DB::connection('mysql_2')->getPdo();
-        if ($pdo) {
+
+
+        try {
             $reposnse .= "Connected successfully to remote database " . DB::connection('mysql_2')->getDatabaseName() . '<br>';
-        } else {
-            $reposnse .= "You are not connected to remote database <br>";
+            DB::connection('mysql_2')->getPdo();
+        } catch (\PDOException $e) {
+            $can_sync = false;
+            $reposnse .= "You are not connected to remote database <br>" . $e->getMessage();
+        }
+
+        if ($can_sync) {
+            //run sync source to destination
+            $this->Sync('mysql', 'mysql_2');
+            //reverse the process to get the changes from remote to local
+            $this->Sync('mysql_2', 'mysql');
+        } //end on sync process
+        else {
+            $reposnse .= "Sorry We Can not do synchronizing process check your connection.";
         }
         echo $reposnse;
-        //run sync source to destination
-        $this->Sync('mysql', 'mysql_2');
-        //reverse the process to get the changes from remote to local
-        $this->Sync('mysql_2', 'mysql');
     } //end of index function
     /**
      * basic clean array to fit raw query     *
