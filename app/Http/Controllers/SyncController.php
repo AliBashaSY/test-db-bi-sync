@@ -40,9 +40,9 @@ class SyncController extends Controller
             DB::connection('mysql_2')->getPdo();
         } catch (\PDOException $e) {
             $can_sync = false;
-            $reposnse .= "You are not connected to remote database <br>" . $e->getMessage();
+            $reposnse .= "<br>You are not connected to remote database <br>" . $e->getMessage();
         }
-
+        echo $reposnse;
         if ($can_sync) {
             //run sync source to destination
             $this->Sync('mysql', 'mysql_2');
@@ -52,7 +52,6 @@ class SyncController extends Controller
         else {
             $reposnse .= "<br><p style='color:red;'>Sorry We Can not do synchronizing process check your connection.</p><br>";
         }
-        echo $reposnse;
     } //end of index function
     /**
      * basic clean array to fit raw query     *
@@ -167,6 +166,8 @@ class SyncController extends Controller
             DB::connection($remote_db_connection)->select(DB::raw($insert_current_audits_row_query));
             //run query of inserting audits record on remote db
             DB::connection($local_db_connection)->select(DB::raw('UPDATE `audits` SET `synced` = 1 WHERE `audits`.`id` =' . $operate->id));
+            //basic count of opertations output
+            echo "<br> We have made" . count($array_of_operations) . "change on " . $remote_db_connection . " database<br>";
         } //end of main foreach
     } //end of Sync function
 }
