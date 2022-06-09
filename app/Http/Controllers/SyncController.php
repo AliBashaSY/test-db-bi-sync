@@ -50,7 +50,7 @@ class SyncController extends Controller
             $this->Sync('mysql_2', 'mysql');
         } //end on sync process
         else {
-            $reposnse .= "Sorry We Can not do synchronizing process check your connection.";
+            $reposnse .= "<br><p style='color:red;'>Sorry We Can not do synchronizing process check your connection.</p><br>";
         }
         echo $reposnse;
     } //end of index function
