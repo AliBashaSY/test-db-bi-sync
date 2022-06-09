@@ -166,8 +166,8 @@ class SyncController extends Controller
             DB::connection($remote_db_connection)->select(DB::raw($insert_current_audits_row_query));
             //run query of inserting audits record on remote db
             DB::connection($local_db_connection)->select(DB::raw('UPDATE `audits` SET `synced` = 1 WHERE `audits`.`id` =' . $operate->id));
-            //basic count of opertations output
-            echo "<br> We have made" . count($array_of_operations) . "change on " . $remote_db_connection . " database<br>";
+            //basic count of opertations output           
         } //end of main foreach
+        echo "<br> We have made" . count($array_of_operations) . "change on " . $remote_db_connection . " database<br>";
     } //end of Sync function
 }
